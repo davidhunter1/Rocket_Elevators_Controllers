@@ -1,0 +1,223 @@
+sequence main
+    set battery to functioning
+    set total_floors to 10
+    set total_column to 1
+    set total_elevators to 2
+    set elevator_status to idle
+    set doors to close
+    if time of day is between 14:30-19:00
+        set origin to 0 in floor range
+    else set default_elevator_floor to 9
+end sequence
+
+sequence callelevator  'corridor button, with four sequences controlling the entire event'
+    call button_activate with direction and floor 
+        returning call_button
+    call findelev with direction and floor 
+        returning elevator
+    call request with elevator and floor_requested
+        returning sorted_req_list
+    call operate with elevator and direction and sorted_req_list
+end sequence 
+
+sequence button_activate  'activates the button'
+    call find_call_button with direction and floor 
+         returning call_button
+    set call_button active
+end sequence
+
+sequence find_call_button 
+    for each call_button in call_buttons
+        if call_button_floor is floor_requested and call_button_direction is direction_requested then 'if btn=floorrequested+direction'
+            return call_button
+        end if
+    end for 
+end sequence
+
+sequence findelev  'sequence to find the appropriate elevator when the various criteria are met (floor and direction positionings)'
+    for each elevator in elevators 
+        if call_button_floor is elevator_floor and elevator_status is halted and call_button_direction is elevator_direction then  
+            call open_door  'btn floor=elev floor / elev is halted/ same direction'
+        else if call_button_floor is elevator_floor and elevator_status is idle then 
+            call open_door    'btn floor=elev floor/elevator is idle'
+        else if call_button_floor is > elevator_floor and elevator_status is moving or halted and elevator_direction is ascending then
+           call find_nearest_elev   'btn floor>elev floor/elev moving or halted/ascending direction'
+        else if call_button_floor is < elevator_floor and elevator_status is morving or halted and elevator_direction is ascending then
+            call find_nearest_elev  'btn floor<elev floor/elev moving or halted/ascending direction'
+        else if call_button_floor is > elevator_floor and elevator_status is moving or halted and elevator_direction is descending then
+            call find_nearest_elev  'btn floor>elev floor/elev moving/halted/descending direction'
+        else if call_button_floor is < elevator_floor and elevator_status is moving or halted and elevator_direction is descending then
+            call find_nearest_elev  'btn floor<elev floor/elev moving/halted/descending direction'
+        else call_button_floor != elevator_floor and both elevator_status are idle then 
+            call find_nearest_elev
+                end if
+    end for
+end sequence
+
+sequence find_nearest_elev                  'given two elevators with the same trajectories, this will render the appropriate elevator '
+    compute elev_gap as absolute of call_button_floor - elevator_floor
+    set shortest_gap to elev_gap
+        for each elevator in elevators
+            if elevator_direction is call_button_direction
+                compute gap as difference between call_button_floor and current_elevator_floor
+                    if gap is < shortest_gap then
+                        set shortest_gap to gap
+                    end if
+            end if
+        end for
+    determine nearest_elevator with shortest_gap
+    return nearest_elevator
+end sequence
+
+sequence request                              'sends elevator request into the pending list, then re-sorts the list'
+    add floor_requested  to requests_list
+    call sort_requests_list with requests_list returning sorted_req_list
+end sequence
+
+sequence sort_requests_list 
+        if elevator_direction is up then
+            compute requests_list by ascending
+        else if elevator_direction is down then
+            compute requests_list by descending
+        end if
+    set requests_list to sorted_req_list
+    return sorted_req_list 
+end sequence
+
+sequence operate                  'while power is working, and there is a sorted list that is not empty, this sequence will call the appropriate sequence to move the elev'
+    while power_source is operational                            
+        while sorted_req_list is not empty
+            read floor_requested  from sorted_req_list                                                            
+                if elevator_floor is floor_requested  then 
+                    call open_door with elevator                 
+                else if elevator_floor is > floor_requested  then
+                    call go_down with elevator and floor_requested      
+                else if elevator_floor is < floor_requested  then
+                    call go_up with elevator and floor_requested
+                end if 
+            end while                                                  
+        call idle with elevator
+    end while                          
+end sequence
+
+sequence activate_floor_button  'within the elevator, this will help users choose their appropriate destination'
+    call find_floor_button with direction and floor returning floor_button
+    set floor_button to active
+    call request 
+end sequence
+
+sequence deactivate_floor_button 'this sequence and the following sequence will deactive the button once the floor is reached'
+    call find_floor_button with direction and floor returning floor_button
+    set floor_button to unactive
+end sequence
+
+sequence find_floor_button  
+    for each floor_button in floor_buttons
+        if floor_button_floor is elevator_floor and floor_button_direction is elevator_direction then 
+        return floor_button
+        end if
+    end for 
+end sequence
+
+sequence open_door_button  'button-open door'
+        call open_door with elevator
+end sequence
+
+sequence open_door  'sequence to button open door'
+    if elevator_status is halted then
+        open door
+    end if
+    init timer to 5 seconds
+    call deactivate_floor_button
+    call button_deactivate
+end sequence
+
+sequence button_deactivate 'button deactivates when button floor=floor requested'
+    call find_call_button with direction and floor
+        returning call_button
+    set call_button deactive
+end sequence
+
+sequence close_door_button  'button-close door'
+    call close_door with elevator
+end sequence
+
+sequence close_door   'close the door but check errors/capacity first'
+    call errorsensor with elevator
+    call capacity with elevator
+        close door
+    call move with elevator
+end sequence 
+
+sequence emergency_button 'in case of emergencies, the emergency button changes that status and calls a set number'
+    if emergency_button is pressed,  set elevator_status to shutdown
+        telephone emergency number
+    end if
+end sequence
+
+sequence go_down  'for elevator to close door,change status,move downwards, halt, then open door '
+    if door is not closed
+        call close_door with elevator
+    end if
+    call move with elevator
+    repeat 
+        compute elevator_floor as elevator_floor - 1 
+    until elevator_floor is floor_requested
+    call halt with elevator
+    call open_door 
+end sequence 
+
+sequence go_up 'for elevator to open door, change status, move downwards, halt, then open door'
+    if door is not closed
+        call close_door with elevator
+    end if
+    call move with elevator
+    repeat 
+        compute elevator_floor as elevator_floor + 1 
+    until elevator_floor is floor_requested
+    call halt with elevator
+    call open_door 
+end sequence 
+
+
+
+sequence errorsensor 'for elevator to read the sensor and detect any interference, and open door if so'
+read sensor from door 
+if intereference 
+    call open_door with elevator
+else proceed 
+end if 
+end sequence 
+
+sequence capacity  'read scale, if too heavy, open doors'
+read weight from scale
+    if weight is > capacity
+        call open_door until under max capacity
+    else proceed
+    end if
+end sequence 
+
+
+'elevator status'
+
+sequence halt
+    set elevator_status to halted
+end sequence
+
+sequence move 
+    set elevator_status to moving
+end sequence
+
+sequence idle 
+    set elevator_status to idle
+end sequence
+
+sequence shutdown
+    set elevator_status to shutdown
+end sequence
+
+
+
+
+ 
+
