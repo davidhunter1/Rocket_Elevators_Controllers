@@ -21,9 +21,7 @@ function Test1() {
 	columntest.cagesList[0].queue = [];         <--- Manipulate the elevators queue ( 1-9, multiple numbers can be placed within)
 
 	columntest.requestCage(3, "up");    <--- Manipulate the requested floor, and desired direction
-}
 
-Test1();
 
 
 
