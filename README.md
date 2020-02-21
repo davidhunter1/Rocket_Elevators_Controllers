@@ -11,7 +11,7 @@ Additionally, new tests can be created by manipulating the position, orientation
 elevators by simply editing them within the code. Of course, the Request queue can be manipulated to change the
 floor at which it was called at (X,_), and the desired orientation (_,"up/down") as shown below:
 
-function Test1() {
+
 	
 	columntest = new Column(10, 2);
 
