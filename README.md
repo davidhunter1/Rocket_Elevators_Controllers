@@ -1,10 +1,9 @@
 # Rocket_Elevators_Controllers
 Navigating the Javascript and Python File: <br>
 In order to use and see the results of the Javascript code and its testing, the JS file must be copied into an IDE.
-I have shown the first test, and hidden the second two. That can be manipulated by adding or removing the 
-forward slashes which were placed in front of "Test2();" and "Test1();"
-As for Python, copying the code to Repl.it or another desired location will have the same effect. Removing the pound (#) placed before the 
-function will have the same effect as removing the forward slashes.
+I have shown one test scenario, however the test inputs can be manipulated to show any scenario requested.<br>
+As for Python, copying the code to Repl.it or another desired location will have the same effect. 
+<br>
 
 
 Additionally, new tests can be created by manipulating the position, orientation, status, and queue of the two
