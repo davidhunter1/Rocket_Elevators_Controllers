@@ -1,5 +1,11 @@
 # Rocket_Elevators_Controllers
-Navigating the Javascript and Python File: <br>
+Navtigating the C# File: <br>
+In order to use and see the results of the C# code and its testing, the C# file must be copied into an IDE which can read C#.
+I have shown the four test scenarios, however the test inputs can be manipulated to show any scenario requested.<br>
+Unfortunately time constraints have limited my progress in GO, however I have included what I was able to complete.
+<br>
+
+<br>Navigating the Javascript and Python File: <br>
 In order to use and see the results of the Javascript code and its testing, the JS file must be copied into an IDE.
 I have shown one test scenario, however the test inputs can be manipulated to show any scenario requested.<br>
 As for Python, copying the code to Repl.it or another desired location will have the same effect. 
